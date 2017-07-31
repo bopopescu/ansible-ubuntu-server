@@ -1,0 +1,71 @@
+[circus]
+statsd = 1
+httpd = 1
+
+[env:webapp]
+PATH = $PATH:/bin
+CAKE = lie
+GOOGLE_TRACKING_ID='UA-77470736-1'
+DJANGO_SETTINGS_MODULE=wagtail_cookie.settings.production
+HOST_NAME={{ django_env.HOST_NAME }}
+HOST_NAME_WWW={{ django_env.HOST_NAME_WWW }}
+SECRET_KEY={{ django_env.SECRET_KEY }}
+DB_NAME={{ django_env.DB_NAME }}
+DB_USER={{ django_env.DB_USER }}
+DB_PASSWD={{ django_env.DB_PASSWD }}
+DB_HOST={{ django_env.DB_HOST }}
+EMAIL_USER={{ django_env.EMAIL_USER }}
+EMAIL_HOST={{ django_env.EMAIL_HOST }}
+EMAIL_FROM={{ django_env.EMAIL_FROM }}
+EMAIL_PASSWD={{ django_env.EMAIL_PASSWD }}
+
+
+[watcher:webapp]
+working_dir = /usr/local/sites/qiidi-wagtail
+cmd = {{ virtualenvs_dir }}{{ project_name }}-env/bin/chaussette --fd $(circus.sockets.web) --backend meinheld wagtail_cookie.wsgi.application
+virtualenv =  {{ virtualenvs_dir }}{{ project_name }}-env
+copy_env = True
+numprocesses = 2
+use_sockets = True
+
+
+stderr_stream.class = StdoutStream
+stdout_stream.class = StdoutStream
+#stdout_stream.filename = logs/qiidi-stdout.log
+#stderr_stream.filename = logs/qiidi-stderr.log
+# push to log every 300 ms
+#stdout_stream.refresh_time = 0.3
+# rotate the log file when it reaches 1 gb
+# and save 5 copied of rotated files
+#stdout_stream.max_bytes = 1073741824
+#stdout_stream.backup_count = 5
+
+
+[env:dcelery]
+PATH = $PATH:/bin
+CAKE = lie
+DJANGO_SETTINGS_MODULE=wagtail_cookie.settings.production
+HOST_NAME={{ django_env.HOST_NAME }}
+HOST_NAME_WWW={{ django_env.HOST_NAME_WWW }}
+SECRET_KEY={{ django_env.SECRET_KEY }}
+DB_NAME={{ django_env.DB_NAME }}
+DB_USER={{ django_env.DB_USER }}
+DB_PASSWD={{ django_env.DB_PASSWD }}
+DB_HOST={{ django_env.DB_HOST }}
+EMAIL_USER={{ django_env.EMAIL_USER }}
+EMAIL_HOST={{ django_env.EMAIL_HOST }}
+EMAIL_FROM={{ django_env.EMAIL_FROM }}
+EMAIL_PASSWD={{ django_env.EMAIL_PASSWD }}
+
+[watcher:dcelery]
+working_dir = /usr/local/sites/qiidi-wagtail
+cmd = {{ virtualenvs_dir }}/{{ project_name }}-env/bin/celery -A wagtail_cookie worker --loglevel=INFO
+
+stdout_stream.class = StdoutStream
+stderr_stream.class = StdoutStream
+#stdout_stream.filename = logs/qiidi-stdout.log
+#stderr_stream.filename = logs/qiidi-stderr.log
+
+[socket:web]
+host = 0.0.0.0
+port = 2015

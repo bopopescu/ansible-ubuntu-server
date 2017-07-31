@@ -1,0 +1,28 @@
+---
+
+- name: install apt packages
+  apt: pkg={{ item }} state=present
+  with_items:
+    - git
+    - libevent-dev
+    - libzmq-dev
+    - python-dev
+    - python-gevent
+    - python-virtualenv
+
+- name: install pip packages
+  pip: name={{ item }} state=latest
+  with_items:
+    - pip
+    - circus
+    - circus-web
+  notify: restart circus
+
+- name: Deploy the Circus Config Script
+  template: src=circus.ini.j2
+            dest=/etc/circus/circus.ini
+            backup=yes
+
+- name: ensure app is running
+  service: name=circus state=started
+

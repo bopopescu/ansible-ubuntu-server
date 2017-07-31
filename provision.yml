@@ -1,0 +1,16 @@
+- name: apply common configruation to all nodes
+  hosts: all 
+  sudo: yes 
+  user: ubuntu 
+  roles:
+      - common
+
+- name: deploy postgreSQL and configure the database
+  hosts: all
+  sudo: yes 
+  user: ubuntu 
+  roles:
+      - role: database 
+  tags:
+      - database
+

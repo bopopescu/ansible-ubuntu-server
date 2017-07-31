@@ -1,0 +1,78 @@
+---
+- name: Pull/And update from hg repo 
+  shell: hg pull
+      && hg update
+  sudo: no
+  when: vcs == 'hg'
+  args:
+      chdir: "{{ sites_dir }}/{{ project_dir }}"
+  tags:
+      - django
+
+- name: Pull from git repo 
+  shell: git pull
+  sudo: no
+  when: vcs == 'git'
+  args:
+      chdir: "{{ sites_dir }}/{{ project_dir }}"
+  tags:
+      - django
+
+- name: Install/update apps required by the Django app inside virtualenv
+  pip: virtualenv={{ virtualenvs_dir }}/{{ project_name }}-env 
+       requirements={{ sites_dir }}/{{ project_dir }}/requirements/production.txt
+  tags:
+      -  django
+
+
+- name: Run the Django syncdb command
+  django_manage:
+    command: syncdb
+    app_path: "{{ sites_dir }}/{{ project_dir }}"
+    virtualenv: "{{ virtualenvs_dir }}/{{ project_name }}-env"
+    settings: "wagtail_cookie.settings.production"
+  environment: "{{ django_environment }}"
+  when: run_django_syncdb is defined and run_django_syncdb
+  tags: django.syncdb
+
+
+- django_manage: >
+      command=migrate
+      app_path={{ sites_dir }}/{{ project_dir }}
+      settings=wagtail_cookie.settings.production
+      virtualenv={{ virtualenvs_dir }}/{{ project_name }}-env
+  environment: '{{ django_env }}'
+
+- name: Run Django collectstatic
+  shell: . {{ virtualenvs_dir }}/{{ project_name }}-env/bin/activate
+         && python manage.py collectstatic --noinput --settings=wagtail_cookie.settings.production
+  environment: django_env
+  sudo: no
+  args:
+    chdir: "{{ sites_dir }}/{{ project_dir }}"
+  tags:
+      - django
+
+#- name: deploy circus config
+#  copy: src=circus.ini dest=/circus.ini
+#  notify: restart app
+
+#- name: Run Django collectstatic
+#  django_manage:
+#    command: collectstatic
+#    app_path: "{{ sites_dir }}/{{ project_dir }}"
+#    virtualenv: "{{ virtualenvs_dir }}/{{ project_name }}-env"
+#    settings: "{{ django_settings_file }}"
+#  environment: "wagtail_cookie.settings.production"
+#  when: run_django_collectstatic is defined and run_django_collectstatic
+#  tags: django.collectstatic
+
+#- name: Run Django compress
+#  shell: . {{ virtualenvs_dir }}/{{ project_name }}-env/bin/activate
+#        && python manage.py compress --settings={{ project_name }}.settings.production
+#  environment: django_env
+#  sudo: no
+#  args:
+#    chdir: "{{ sites_dir }}/{{ project_dir }}"
+#  tags:
+#    - django
